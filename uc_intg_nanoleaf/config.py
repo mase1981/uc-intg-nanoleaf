@@ -68,7 +68,6 @@ class NanoleafConfig:
 
     def add_device(self, ip_address: str, auth_token: str, device_info: Dict[str, Any], port: int = 16021) -> None:
         """Add a new Nanoleaf device to configuration."""
-        # FIXED: Create unique device ID using IP + port to handle both real-world and simulator scenarios
         device_id = f"{ip_address.replace('.', '_')}_{port}"
         
         device_config = {
