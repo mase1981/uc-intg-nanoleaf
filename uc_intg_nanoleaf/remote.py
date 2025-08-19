@@ -60,7 +60,6 @@ class NanoleafRemote:
         for device_id, device_info in self._discovered_devices.items():
             device_name = device_info.get("name", f"Device_{device_id}")
             clean_name = self._clean_command_name(device_name)
-            device_type = device_info.get("device_type", "")
             
             # Power commands (all devices support)
             commands.extend([f"{clean_name}_ON", f"{clean_name}_OFF", f"{clean_name}_TOGGLE"])
@@ -73,29 +72,21 @@ class NanoleafRemote:
                     f"{clean_name}_BRIGHTNESS_75", f"{clean_name}_BRIGHTNESS_100"
                 ])
             
-            # Elements devices only support temperature, not RGB colors
-            if device_type == "elements":
-                # Only temperature commands for Elements
+            # Color commands (all devices support)
+            if device_info.get("supports_color", True):
+                commands.extend([
+                    f"{clean_name}_COLOR_RED", f"{clean_name}_COLOR_GREEN", 
+                    f"{clean_name}_COLOR_BLUE", f"{clean_name}_COLOR_WHITE",
+                    f"{clean_name}_COLOR_WARM", f"{clean_name}_COLOR_COOL",
+                    f"{clean_name}_COLOR_PURPLE", f"{clean_name}_COLOR_YELLOW"
+                ])
+            
+            # Color temperature commands
+            if device_info.get("supports_color_temp", True):
                 commands.extend([
                     f"{clean_name}_TEMP_WARM", f"{clean_name}_TEMP_COOL",
-                    f"{clean_name}_TEMP_2700K", f"{clean_name}_TEMP_4000K"
+                    f"{clean_name}_TEMP_2700K", f"{clean_name}_TEMP_4000K", f"{clean_name}_TEMP_6500K"
                 ])
-            else:
-                # RGB color commands for non-Elements devices
-                if device_info.get("supports_color", True):
-                    commands.extend([
-                        f"{clean_name}_COLOR_RED", f"{clean_name}_COLOR_GREEN", 
-                        f"{clean_name}_COLOR_BLUE", f"{clean_name}_COLOR_WHITE",
-                        f"{clean_name}_COLOR_WARM", f"{clean_name}_COLOR_COOL",
-                        f"{clean_name}_COLOR_PURPLE", f"{clean_name}_COLOR_YELLOW"
-                    ])
-                
-                # Full temperature range for non-Elements devices
-                if device_info.get("supports_color_temp", True):
-                    commands.extend([
-                        f"{clean_name}_TEMP_WARM", f"{clean_name}_TEMP_COOL",
-                        f"{clean_name}_TEMP_2700K", f"{clean_name}_TEMP_4000K", f"{clean_name}_TEMP_6500K"
-                    ])
             
             # Effect commands
             if device_info.get("supports_effects", True):
@@ -298,7 +289,6 @@ class NanoleafRemote:
     def _add_single_device_controls(self, page: UiPage, device_id: str, device_info: Dict[str, Any], start_y: int) -> int:
         """Add comprehensive controls for a single device."""
         device_name = device_info.get("name", f"Device {device_id}")
-        device_type = device_info.get("device_type", "")
         clean_name = self._clean_command_name(device_name)
         y = start_y
         
@@ -316,31 +306,19 @@ class NanoleafRemote:
             page.add(create_ui_text("100%", 3, y, Size(1, 1), f"{clean_name}_BRIGHTNESS_100"))
             y += 1
         
-        # Elements devices only support temperature, not RGB colors
-        if device_type == "elements":
-            # Only temperature controls for Elements
-            if y < 6:
-                page.add(create_ui_text("Warm", 0, y, Size(2, 1), f"{clean_name}_TEMP_WARM"))
-                page.add(create_ui_text("Cool", 2, y, Size(2, 1), f"{clean_name}_TEMP_COOL"))
-                y += 1
-            if y < 6:
-                page.add(create_ui_text("2700K", 0, y, Size(2, 1), f"{clean_name}_TEMP_2700K"))
-                page.add(create_ui_text("4000K", 2, y, Size(2, 1), f"{clean_name}_TEMP_4000K"))
-                y += 1
-        else:
-            # RGB color presets for non-Elements devices
-            if y < 6:
-                page.add(create_ui_text("Red", 0, y, Size(1, 1), f"{clean_name}_COLOR_RED"))
-                page.add(create_ui_text("Green", 1, y, Size(1, 1), f"{clean_name}_COLOR_GREEN"))
-                page.add(create_ui_text("Blue", 2, y, Size(1, 1), f"{clean_name}_COLOR_BLUE"))
-                page.add(create_ui_text("White", 3, y, Size(1, 1), f"{clean_name}_COLOR_WHITE"))
-                y += 1
-            
-            # Color temperature for non-Elements devices
-            if y < 6:
-                page.add(create_ui_text("Warm", 0, y, Size(2, 1), f"{clean_name}_TEMP_WARM"))
-                page.add(create_ui_text("Cool", 2, y, Size(2, 1), f"{clean_name}_TEMP_COOL"))
-                y += 1
+        # Color presets
+        if y < 6:
+            page.add(create_ui_text("Red", 0, y, Size(1, 1), f"{clean_name}_COLOR_RED"))
+            page.add(create_ui_text("Green", 1, y, Size(1, 1), f"{clean_name}_COLOR_GREEN"))
+            page.add(create_ui_text("Blue", 2, y, Size(1, 1), f"{clean_name}_COLOR_BLUE"))
+            page.add(create_ui_text("White", 3, y, Size(1, 1), f"{clean_name}_COLOR_WHITE"))
+            y += 1
+        
+        # Color temperature
+        if y < 6:
+            page.add(create_ui_text("Warm", 0, y, Size(2, 1), f"{clean_name}_TEMP_WARM"))
+            page.add(create_ui_text("Cool", 2, y, Size(2, 1), f"{clean_name}_TEMP_COOL"))
+            y += 1
         
         # Effects (first 4)
         effects_list = device_info.get("effects_list", [])
@@ -686,22 +664,38 @@ class NanoleafRemote:
                     return True
                 return False
             elif action.startswith("TEMP_"):
+                device_type = device_info.get("device_type", "")
+                
+                # Elements devices should use color commands instead of temperature commands
+                if device_type == "elements":
+                    _LOG.info(f"Elements device detected, converting TEMP command to COLOR command for {device.name}")
+                    # Convert TEMP command to COLOR command for Elements
+                    if action == "TEMP_WARM":
+                        color_action = "COLOR_WARM"
+                    elif action == "TEMP_COOL":
+                        color_action = "COLOR_COOL"
+                    else:
+                        # For specific Kelvin values, map to closest color
+                        if "2700K" in action:
+                            color_action = "COLOR_WARM"
+                        elif "4000K" in action or "6500K" in action:
+                            color_action = "COLOR_COOL"
+                        else:
+                            _LOG.warning(f"Unknown temperature action for Elements: {action}")
+                            return False
+                    
+                    # Execute as color command instead
+                    _LOG.info(f"Executing {color_action} instead of {action} for Elements device")
+                    return await self._execute_device_action(device, color_action, device_info, device_id)
+                
+                # Non-Elements devices use normal temperature commands
                 temp_map = {
                     "WARM": 2700,
-                    "COOL": 6500,  # Default for non-Elements
+                    "COOL": 6500,
                     "2700K": 2700,
                     "4000K": 4000,
                     "6500K": 6500
                 }
-                
-                # Elements devices have limited temperature range (1500-4000K)
-                device_type = device_info.get("device_type", "")
-                if device_type == "elements":
-                    temp_map["COOL"] = 4000  # Override cool temp for Elements
-                    # Remove 6500K for Elements as it's out of range
-                    if action == "TEMP_6500K":
-                        _LOG.warning(f"6500K not supported on Elements device {device.name}, using 4000K instead")
-                        temp_map["6500K"] = 4000
                 
                 temp_name = action.replace("TEMP_", "")
                 if temp_name in temp_map:
