@@ -1,0 +1,34 @@
+{
+    "driver_id": "uc_intg_nanoleaf",
+    "version": "0.1.0",
+    "min_core_api": "0.21.0",
+    "name": {
+        "en": "Nanoleaf Smart Lighting",
+        "de": "Nanoleaf Smart Beleuchtung",
+        "fr": "Éclairage Intelligent Nanoleaf"
+    },
+    "description": {
+        "en": "Control Nanoleaf smart lighting panels, canvas, shapes, elements, and LED strips with comprehensive lighting control and effects"
+    },
+    "developer": {
+        "name": "Meir Miyara",
+        "email": "meir.miyara@gmail.com",
+        "url": "https://github.com/mase1981"
+    },
+    "home_page": "https://github.com/mase1981/uc-intg-nanoleaf",
+    "documentation": "https://github.com/mase1981/uc-intg-nanoleaf/blob/main/README.md",
+    "setup_data_schema": {
+        "title": {
+            "en": "Nanoleaf Device Setup"
+        },
+        "settings": []
+    },
+    "release_date": "2025-01-19",
+    "icon": "uc:leaf",
+    "enabled": true,
+    "port": 9090,
+    "mdns": {
+        "name": "Nanoleaf Smart Lighting Integration",
+        "mdns_type": "_uc-integration._tcp.local."
+    }
+}

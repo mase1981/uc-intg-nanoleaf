@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "uc-intg-nanoleaf"
+version = "0.1.0"
+description = "Nanoleaf integration for Unfolded Circle Remote Two/3"
+authors = [{name = "Meir Miyara", email = "meir.miyara@gmail.com"}]
+readme = "README.md"
+license = {text = "MPL-2.0"}
+requires-python = ">=3.11"
+keywords = ["unfoldedcircle", "remote", "integration", "nanoleaf", "smart-lighting"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: Mozilla Public License 2.0 (MPL-2.0)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Home Automation",
+]
+dependencies = [
+    "ucapi>=0.3.1",
+    "aiohttp>=3.8.0",
+    "zeroconf>=0.131.0",
+    "certifi>=2023.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+    "black",
+    "flake8",
+    "mypy",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/mase1981/uc-intg-nanoleaf"
+"Bug Reports" = "https://github.com/mase1981/uc-intg-nanoleaf/issues"
+"Source" = "https://github.com/mase1981/uc-intg-nanoleaf"
+
+[tool.setuptools]
+platforms = ["any"]
+zip-safe = false
+
+[tool.setuptools.packages.find]
+include = ["uc_intg_nanoleaf*"]
+
+[tool.black]
+line-length = 100
+target-version = ['py311']
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "--cov=uc_intg_nanoleaf --cov-report=html --cov-report=term-missing"
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
