@@ -462,37 +462,70 @@ class NanoleafRemote:
     
     async def _execute_global_command(self, command: str) -> bool:
         """Execute global commands affecting all devices."""
+        _LOG.info(f"Executing global command: {command} for {len(self._discovered_devices)} devices")
+        
         tasks = []
         
         for device_id, device_info in self._discovered_devices.items():
+            device_name = device_info.get('name', f"Device_{device_id}")
+            _LOG.info(f"Creating task for device: {device_name} ({device_id})")
+            
             if command == "ALL_ON":
-                task = self._execute_device_action_safe(device_id, "turn_on", device_info.get('name'))
+                task = self._execute_device_action_safe(device_id, "turn_on", device_name)
             elif command == "ALL_OFF":
-                task = self._execute_device_action_safe(device_id, "turn_off", device_info.get('name'))
+                task = self._execute_device_action_safe(device_id, "turn_off", device_name)
             elif command == "ALL_TOGGLE":
-                task = self._execute_device_action_safe(device_id, "toggle", device_info.get('name'))
+                task = self._execute_device_action_safe(device_id, "toggle", device_name)
             elif command == "ALL_IDENTIFY":
-                task = self._execute_device_action_safe(device_id, "identify", device_info.get('name'))
+                task = self._execute_device_action_safe(device_id, "identify", device_name)
             else:
+                _LOG.warning(f"Unknown global command: {command}")
                 continue
             
             tasks.append(task)
         
         if tasks:
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-            success_count = sum(1 for result in results if result is True)
-            return success_count > 0
-        
-        return False
+            _LOG.info(f"Executing {len(tasks)} device tasks for global command {command}")
+            try:
+                results = await asyncio.gather(*tasks, return_exceptions=True)
+                success_count = 0
+                
+                for i, result in enumerate(results):
+                    device_id = list(self._discovered_devices.keys())[i]
+                    device_name = self._discovered_devices[device_id].get('name', f"Device_{device_id}")
+                    
+                    if isinstance(result, Exception):
+                        _LOG.error(f"Exception for device {device_name}: {result}")
+                    elif result is True:
+                        success_count += 1
+                        _LOG.info(f"SUCCESS: {device_name} completed {command}")
+                    else:
+                        _LOG.warning(f"FAILED: {device_name} failed {command}")
+                
+                _LOG.info(f"Global command {command} completed: {success_count}/{len(tasks)} devices succeeded")
+                return success_count > 0
+                
+            except Exception as e:
+                _LOG.error(f"Error executing global command {command}: {e}", exc_info=True)
+                return False
+        else:
+            _LOG.warning(f"No tasks created for global command {command}")
+            return False
     
     async def _execute_device_action_safe(self, device_id: str, action: str, device_name: str) -> bool:
         """Safely execute an action on a device."""
         try:
-            if not await self._check_throttle(device_id):
-                return True
+            _LOG.info(f"Executing {action} on device {device_name} ({device_id})")
+            
+            # Skip throttling for global commands to ensure all devices execute
+            # Global commands are user-initiated and should execute immediately
+            # if not await self._check_throttle(device_id):
+            #     _LOG.debug(f"Throttle skipped for global command on {device_name}")
+            #     return True
             
             device_info = self._discovered_devices.get(device_id)
             if not device_info:
+                _LOG.error(f"Device info not found for {device_id}")
                 return False
             
             # Create device object
@@ -500,20 +533,28 @@ class NanoleafRemote:
             auth_token = device_info.get("auth_token")
             
             if not ip_address or not auth_token:
-                _LOG.error(f"Missing IP or auth token for device {device_name}")
+                _LOG.error(f"Missing IP ({ip_address}) or auth token for device {device_name}")
                 return False
             
             device = NanoleafDevice(ip_address, auth_token, device_info)
             
             if action == "turn_on":
+                _LOG.info(f"Turning ON device {device_name}")
                 result = await self._client.turn_on(device)
                 if result:
                     self._device_states[device_id] = True
+                    _LOG.info(f"✅ Successfully turned ON {device_name}")
+                else:
+                    _LOG.error(f"❌ Failed to turn ON {device_name}")
                 return result
             elif action == "turn_off":
+                _LOG.info(f"Turning OFF device {device_name}")
                 result = await self._client.turn_off(device)
                 if result:
                     self._device_states[device_id] = False
+                    _LOG.info(f"✅ Successfully turned OFF {device_name}")
+                else:
+                    _LOG.error(f"❌ Failed to turn OFF {device_name}")
                 return result
             elif action == "toggle":
                 # Get current state and toggle
@@ -521,24 +562,37 @@ class NanoleafRemote:
                 _LOG.info(f"Toggle for {device_name}: current state is {'ON' if current_state else 'OFF'}")
                 
                 if current_state:
+                    _LOG.info(f"Toggling {device_name} from ON to OFF")
                     result = await self._client.turn_off(device)
                     if result:
                         self._device_states[device_id] = False
-                        _LOG.info(f"Toggled {device_name} OFF")
+                        _LOG.info(f"✅ Toggled {device_name} OFF")
+                    else:
+                        _LOG.error(f"❌ Failed to toggle {device_name} OFF")
                 else:
+                    _LOG.info(f"Toggling {device_name} from OFF to ON")
                     result = await self._client.turn_on(device)
                     if result:
                         self._device_states[device_id] = True
-                        _LOG.info(f"Toggled {device_name} ON")
+                        _LOG.info(f"✅ Toggled {device_name} ON")
+                    else:
+                        _LOG.error(f"❌ Failed to toggle {device_name} ON")
                 
                 return result
             elif action == "identify":
-                return await self._client.identify_device(device)
+                _LOG.info(f"Identifying device {device_name}")
+                result = await self._client.identify_device(device)
+                if result:
+                    _LOG.info(f"✅ Successfully identified {device_name}")
+                else:
+                    _LOG.error(f"❌ Failed to identify {device_name}")
+                return result
             else:
+                _LOG.error(f"Unknown action: {action}")
                 return False
                 
         except Exception as e:
-            _LOG.error(f"Error executing {action} on device {device_name}: {e}")
+            _LOG.error(f"Exception executing {action} on device {device_name}: {e}", exc_info=True)
             return False
 
     async def _get_device_state(self, device_id: str, device: NanoleafDevice = None) -> bool:

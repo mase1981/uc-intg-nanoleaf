@@ -101,7 +101,9 @@ class NanoleafConfig:
     def _determine_device_type(self, device_info: Dict[str, Any]) -> str:
         """Determine device type based on device information."""
         model = device_info.get("model", "").upper()
+        name = device_info.get("name", "").upper()
         
+        # Check model first
         if "NL22" in model or "NL42" in model:
             return "light_panels"
         elif "NL29" in model:
@@ -112,11 +114,21 @@ class NanoleafConfig:
             return "elements"
         elif "NL69" in model:
             return "lines"
-        elif "STRIP" in device_info.get("name", "").upper():
+        
+        # If model detection fails, check name
+        if "ELEMENTS" in name:
+            return "elements"
+        elif "CANVAS" in name:
+            return "canvas"
+        elif "SHAPES" in name:
+            return "shapes"
+        elif "LINES" in name:
+            return "lines"
+        elif "STRIP" in name:
             return "strip"
-        else:
-            # Default to panels if unknown
-            return "panels"
+        
+        # Default fallback
+        return "panels"
 
     def _determine_sku(self, device_info: Dict[str, Any]) -> str:
         """Determine SKU/model identifier."""
