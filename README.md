@@ -27,9 +27,8 @@ Transform your Unfolded Circle Remote Two/3 into a powerful Nanoleaf smart light
 - **Control Pages**: Dedicated pages per device type with full controls
 
 ### Advanced Lighting Features
-- **Full RGB Control**: Hue, saturation, brightness control for millions of colors
 - **Color Temperature**: Warm to cool white (1200K-6500K)
-- **Dynamic Effects**: Access to all device effects and scenes
+- **Dynamic Effects**: Access to device effects and scenes
 - **Custom Colors**: Red, Green, Blue, White, Warm, Cool presets
 - **Brightness Presets**: Quick 25%, 50%, 75%, 100% brightness control
 - **Identify Function**: Flash device for easy identification
