@@ -1,11 +1,9 @@
 {
     "driver_id": "uc_intg_nanoleaf",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "min_core_api": "0.21.0",
     "name": {
-        "en": "Nanoleaf Smart Lighting",
-        "de": "Nanoleaf Smart Beleuchtung",
-        "fr": "Éclairage Intelligent Nanoleaf"
+        "en": "Nanoleaf Smart Lighting"
     },
     "description": {
         "en": "Control Nanoleaf smart lighting panels, canvas, shapes, elements, and LED strips with comprehensive lighting control and effects"

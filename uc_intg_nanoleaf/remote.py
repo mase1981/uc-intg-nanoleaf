@@ -673,7 +673,12 @@ class NanoleafRemote:
                 }
                 temp_name = action.replace("TEMP_", "")
                 if temp_name in temp_map:
-                    return await self._client.set_color_temperature(device, temp_map[temp_name])
+                    kelvin = temp_map[temp_name]
+                    _LOG.info(f"Setting color temperature to {kelvin}K for device {device.name}")
+                    result = await self._client.set_color_temperature(device, kelvin)
+                    _LOG.info(f"Color temperature command result: {result}")
+                    return result
+                _LOG.warning(f"Unknown temperature setting: {temp_name}")
                 return False
             elif action.startswith("EFFECT_"):
                 effect_name = action.replace("EFFECT_", "").replace("_", " ")
@@ -690,8 +695,9 @@ class NanoleafRemote:
                 
                 return False
             else:
+                _LOG.warning(f"Unknown action: {action}")
                 return False
                 
         except Exception as e:
-            _LOG.error(f"Error executing action {action}: {e}")
+            _LOG.error(f"Error executing action {action}: {e}", exc_info=True)
             return False
