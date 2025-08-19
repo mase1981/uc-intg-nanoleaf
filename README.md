@@ -34,7 +34,7 @@ Transform your Unfolded Circle Remote Two/3 into a powerful Nanoleaf smart light
 - **Brightness Presets**: Quick 25%, 50%, 75%, 100% brightness control
 - **Identify Function**: Flash device for easy identification
 
-### Breakthrough Setup Technology
+### Easy Setup
 - **Simultaneous Pairing**: Pair multiple devices at once (breakthrough innovation)
 - **Auto-Discovery**: Finds all Nanoleaf devices on your network via mDNS
 - **Device Selection**: Choose which devices to integrate during setup
